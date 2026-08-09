@@ -1,16 +1,7 @@
-/**
- * The adapter boundary. Everything in src/sheet/ talks to the outside world
- * through these types and nothing else — no fetch, no Postgres, no app imports.
- *
- * Demo backs this with a generated in-memory array.
- * Safe Import backs it with paginated FastAPI calls against Postgres.
- * Same component, different adapter, no rewrite.
- */
-
 export type CellValue = string
 
 export interface Row {
-  /** Absolute index in the full dataset, not the index within a loaded window. */
+  /** Absolute index in the full dataset, not the position within a window. */
   index: number
   cells: Record<string, CellValue>
 }
@@ -21,7 +12,7 @@ export interface ColumnDef {
   width: number
 }
 
-/** One cell-level change. The unit the undo stack is built from. */
+/** One cell change. The unit the undo stack is built from. */
 export interface CellDiff {
   rowIndex: number
   columnKey: string
@@ -35,6 +26,10 @@ export interface CellError {
   message: string
 }
 
+/**
+ * The adapter boundary. Nothing in src/sheet/ reaches outside these methods, so
+ * the same grid runs against an in-memory array or a paginated API unchanged.
+ */
 export interface SheetDataSource {
   getTotalCount(): Promise<number>
   getRows(offset: number, limit: number): Promise<Row[]>
