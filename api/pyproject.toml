@@ -1,0 +1,31 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Bharat Agrawal", email = "18ucc018@lnmiit.ac.in" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.19.1",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.15.0",
+    "python-multipart>=0.0.32",
+    "sqlalchemy>=2.0.51",
+    "uvicorn[standard]>=0.52.1",
+]
+
+# This is an application, not a library — nothing to build or publish, so no
+# build-system. That also stops uv assuming a src/ layout, which would make
+# `app` unimportable.
+[tool.uv]
+package = false
+
+# Without this, type checkers assume a src/ layout and cannot find `app`.
+[tool.ty.environment]
+root = ["."]
+
+[tool.pyright]
+extraPaths = ["."]
