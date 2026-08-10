@@ -7,6 +7,7 @@ from app.db import get_session
 from app.models import Import, Job
 from app.schemas import CommitOut, ImportOut, UploadOut
 from app.services.importer import commit_import, parse_csv, run_job, stage_rows
+from app.services.mapping import guess_mapping
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -50,8 +51,8 @@ def upload(
         total_rows=len(rows),
         idempotency_key=idempotency_key,
         headers=headers,
-        # Identity mapping to begin with; the user confirms or overrides it.
-        mapping={h: h for h in headers},
+        # Heuristic first pass; the user confirms or overrides it.
+        mapping=guess_mapping(headers),
     )
     session.add(imp)
     session.flush()  # assigns imp.id without ending the transaction
