@@ -69,8 +69,13 @@ def describe_columns(headers: list[str], rows: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
+class MappingUnavailable(Exception):
+    """Raised only in strict mode, so evaluation can tell a real answer from a
+    fallback instead of silently scoring the heuristic mapper."""
+
+
 def suggest_mapping(
-    headers: list[str], rows: list[dict[str, str]]
+    headers: list[str], rows: list[dict[str, str]], strict: bool = False
 ) -> list[dict]:
     """
     Returns [{column, field, confidence}] with one entry per header.
@@ -80,6 +85,8 @@ def suggest_mapping(
     closed would block the whole import.
     """
     if not settings.gemini_api_key:
+        if strict:
+            raise MappingUnavailable("no API key")
         return _from_heuristic(headers)
 
     body = {
@@ -109,6 +116,8 @@ def suggest_mapping(
         text = response.json()["candidates"][0]["content"]["parts"][0]["text"]
         parsed = json.loads(text)["mappings"]
     except Exception as exc:
+        if strict:
+            raise MappingUnavailable(str(exc)) from exc
         log.warning("Column mapping fell back to heuristics: %s", exc)
         return _from_heuristic(headers)
 

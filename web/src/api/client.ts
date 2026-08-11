@@ -56,6 +56,9 @@ export function uploadCsv(file: File): Promise<UploadResult> {
   return request<UploadResult>("/imports", { method: "POST", body });
 }
 
+export const uploadSample = () =>
+  request<UploadResult>("/imports/sample", { method: "POST" });
+
 export const getImport = (id: number) => request<ImportInfo>(`/imports/${id}`);
 
 export const getJob = (id: number) => request<JobInfo>(`/jobs/${id}`);

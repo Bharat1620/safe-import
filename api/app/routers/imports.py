@@ -1,3 +1,5 @@
+import pathlib
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -46,7 +48,17 @@ def upload(
                 job_id=job.id if job else None,
             )
 
-    raw = file.file.read()
+    return _create_import(
+        session, file.file.read(), file.filename or "upload.csv", idempotency_key
+    )
+
+
+def _create_import(
+    session: Session,
+    raw: bytes,
+    filename: str,
+    idempotency_key: str | None,
+) -> UploadOut:
     headers, rows = parse_csv(raw)
     if not headers:
         raise HTTPException(400, "Could not read any columns from that file")
@@ -56,7 +68,7 @@ def upload(
     suggestions = suggest_mapping(headers, rows)
 
     imp = Import(
-        filename=file.filename or "upload.csv",
+        filename=filename,
         status="mapping",
         total_rows=len(rows),
         idempotency_key=idempotency_key,
@@ -82,6 +94,17 @@ def upload(
     session.commit()
 
     return UploadOut(import_id=imp.id, total_rows=len(rows), job_id=job.id)
+
+
+@router.post("/sample", response_model=UploadOut)
+def upload_sample(session: Session = Depends(get_session)):
+    """
+    Starts an import from a bundled file, so someone with no CSV to hand can
+    still see the whole flow. Its headers are deliberately opaque — the
+    heuristic mapper cannot resolve them and the model can.
+    """
+    raw = (pathlib.Path(__file__).parent / "sample.csv").read_bytes()
+    return _create_import(session, raw, "sample.csv", None)
 
 
 @router.get("/{import_id}", response_model=ImportOut)

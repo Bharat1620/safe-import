@@ -12,10 +12,17 @@ change and record the delta.
 import json
 import pathlib
 import sys
+import time
 
-from app.services.llm_mapping import suggest_mapping, _from_heuristic
+from app.services.llm_mapping import (
+    MappingUnavailable,
+    _from_heuristic,
+    suggest_mapping,
+)
 
 CASES = json.loads((pathlib.Path(__file__).parent / "cases.json").read_text())
+
+PACE_SECONDS = 6.0
 
 
 def rows_from(columns: dict[str, list[str]]) -> list[dict[str, str]]:
@@ -24,6 +31,27 @@ def rows_from(columns: dict[str, list[str]]) -> list[dict[str, str]]:
         {k: (v[i] if i < len(v) else "") for k, v in columns.items()}
         for i in range(depth)
     ]
+
+
+def call_with_retry(
+    headers: list[str], rows: list[dict[str, str]], attempts: int = 4
+) -> list[dict]:
+    """
+    strict=True so a rate-limited call raises instead of quietly returning
+    heuristic answers — otherwise the score is a blend of two mappers and the
+    number means nothing. Free-tier quotas make this the common failure.
+    """
+    delay = 5.0
+    for attempt in range(attempts):
+        try:
+            return suggest_mapping(headers, rows, strict=True)
+        except MappingUnavailable as exc:
+            if attempt == attempts - 1:
+                raise SystemExit(f"\nmapping unavailable, no score produced: {exc}")
+            print(f"     retrying in {delay:.0f}s ({exc})")
+            time.sleep(delay)
+            delay *= 2
+    raise AssertionError("unreachable")
 
 
 def main() -> None:
@@ -36,11 +64,13 @@ def main() -> None:
     for case in CASES:
         headers = list(case["columns"])
         rows = rows_from(case["columns"])
-        result = (
-            _from_heuristic(headers)
-            if heuristic
-            else suggest_mapping(headers, rows)
-        )
+        if heuristic:
+            result = _from_heuristic(headers)
+        else:
+            result = call_with_retry(headers, rows)
+            # Free-tier quotas are per minute, and 20 cases back to back trip
+            # them. Pacing keeps a full run inside the limit.
+            time.sleep(PACE_SECONDS)
         got = {m["column"]: m["field"] for m in result}
         confidence = {m["column"]: m["confidence"] for m in result}
 

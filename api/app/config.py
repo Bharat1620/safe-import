@@ -14,7 +14,9 @@ class Settings(BaseSettings):
 
     # Unset means column mapping stays on the heuristic path.
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    # An alias rather than a pinned version: Google retires specific models and
+    # closes older ones to new projects, which breaks fresh API keys.
+    gemini_model: str = "gemini-flash-latest"
 
 
 settings = Settings()

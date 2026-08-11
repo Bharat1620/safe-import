@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { uploadCsv } from "../api/client";
+import { uploadCsv, uploadSample, type UploadResult } from "../api/client";
 
 interface UploadProps {
   onUploaded: (importId: number, jobId: number | null) => void;
@@ -21,11 +21,12 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
     return () => clearTimeout(timer);
   }, [busy]);
 
-  async function send(file: File) {
+  // Shared by the file drop and the sample button — only the call differs.
+  async function start(run: () => Promise<UploadResult>) {
     setBusy(true);
     setError(null);
     try {
-      const result = await uploadCsv(file);
+      const result = await run();
       onUploaded(result.import_id, result.job_id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
@@ -33,6 +34,8 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
       setBusy(false);
     }
   }
+
+  const send = (file: File) => start(() => uploadCsv(file));
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4 py-16">
@@ -91,17 +94,31 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
         </p>
       )}
 
-      <p className="text-sm text-slate-500">
-        Or{" "}
-        <button
-          type="button"
-          onClick={onDemo}
-          className="text-sky-600 underline underline-offset-2"
-        >
-          open the 500,000 row demo
-        </button>{" "}
-        — no upload, no backend.
-      </p>
+      <div className="flex flex-col gap-1 text-sm text-slate-500">
+        <p>
+          No file to hand?{" "}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void start(uploadSample)}
+            className="text-sky-600 underline underline-offset-2 disabled:opacity-50"
+          >
+            Try a sample import
+          </button>{" "}
+          — deliberately messy, with unnamed columns for the mapper to work out.
+        </p>
+        <p>
+          Or{" "}
+          <button
+            type="button"
+            onClick={onDemo}
+            className="text-sky-600 underline underline-offset-2"
+          >
+            open the 500,000 row grid demo
+          </button>{" "}
+          — no upload, no backend.
+        </p>
+      </div>
     </div>
   );
 }
