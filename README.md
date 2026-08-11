@@ -71,28 +71,34 @@ would be slower, unverifiable, and worse.
 
 ## Mapping accuracy
 
-`evals/cases.json` holds 20 header sets with known-correct answers, 81 columns in
-total, scored on exact match.
+`evals/cases.json` holds 27 header sets with known-correct answers, 108 columns
+in total, scored on exact match.
 
 ```
-heuristic alias matching     62/81    77%
-gemini-3.1-flash-lite        81/81   100%
+heuristic alias matching      84/108    78%
+gemini-3.1-flash-lite        108/108   100%
 ```
 
-The gap is the whole argument for the model being there: alias matching cannot
-resolve a column called `Col3`, and no list of aliases ever will.
+The baseline is what makes the second number mean anything. Alias matching
+cannot resolve a column called `Col3`, and no list of aliases ever will.
 
-At 100% the set is saturated — it can still catch regressions, but it has no
-headroom left to measure improvement, so harder cases would be the next
-addition. It has already earned its keep twice: it caught a prompt change that
-made accuracy worse, and a harness bug where rate-limited calls fell back to the
-heuristic mapper and were scored as successes. The runner now fails loudly
-instead of quietly reporting a blended number.
+**The set is saturated, and that is the honest finding.** Seven cases were added
+specifically to break it — a `Name` column holding companies while `Contact`
+holds people, order IDs that look like phone numbers, a website domain that is
+not an email, Hindi headers, headers with no values underneath. None of them
+failed. Column mapping is simply within reach of a current model, so the score
+can no longer measure improvement; it now works as a regression test.
 
-An earlier model (`gemini-2.5-flash`) scored 91%, with confidence well
-calibrated — high-confidence claims correct 44/44, low-confidence 30/37. That
-calibration is why the mapping UI sorts least-confident first: when the model
-hedges, that is genuinely where the mistakes are.
+It earned its keep before saturating. It caught a prompt rewrite that read
+better and scored worse, and a harness bug where rate-limited calls fell back to
+the heuristic mapper and were scored as model successes — producing a confident
+number that was a blend of two systems. The runner now fails loudly rather than
+reporting a blended score.
+
+An earlier model (`gemini-2.5-flash`) scored 91% on the original 20 cases, with
+confidence well calibrated: high-confidence claims correct 44/44, low-confidence
+30/37. That calibration is why the mapping UI sorts least-confident first — when
+the model hedges, that is genuinely where the mistakes are.
 
 ```bash
 uv run python -m evals.run heuristic   # baseline

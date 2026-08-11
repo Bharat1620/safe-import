@@ -199,5 +199,74 @@
       "d": ["Acme"]
     },
     "expected": {"a": "full_name", "b": "email", "c": "phone", "d": "company"}
+  },
+  {
+    "name": "name column holds companies, contact holds people",
+    "columns": {
+      "Name": ["Acme Industries", "Globex Ltd"],
+      "Contact": ["Ana Rao", "Bharat Silva"],
+      "Reach": ["ana@acme.com", "bharat@globex.com"]
+    },
+    "expected": {"Name": "company", "Contact": "full_name", "Reach": "email"}
+  },
+  {
+    "name": "two email columns, only one should map",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Email": ["ana@x.com"],
+      "Alternate Email": ["ana.rao@personal.com"],
+      "Company": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "Email": "email", "Alternate Email": null, "Company": "company"}
+  },
+  {
+    "name": "order ids that look like phone numbers",
+    "columns": {
+      "Customer": ["Ana Rao"],
+      "Order Reference": ["9876543210", "9123456789"],
+      "Mail": ["ana@x.com"],
+      "Billed To": ["Acme"]
+    },
+    "expected": {"Customer": "full_name", "Order Reference": null, "Mail": "email", "Billed To": "company"}
+  },
+  {
+    "name": "split first and last name",
+    "columns": {
+      "First": ["Ana", "Bharat"],
+      "Last": ["Rao", "Silva"],
+      "Email": ["ana@x.com"],
+      "Employer": ["Acme"]
+    },
+    "expected": {"First": "full_name", "Last": null, "Email": "email", "Employer": "company"}
+  },
+  {
+    "name": "hindi headers",
+    "columns": {
+      "नाम": ["Ana Rao"],
+      "ईमेल": ["ana@x.com"],
+      "फ़ोन": ["9876543210"],
+      "कंपनी": ["Acme"]
+    },
+    "expected": {"नाम": "full_name", "ईमेल": "email", "फ़ोन": "phone", "कंपनी": "company"}
+  },
+  {
+    "name": "everything blank except headers",
+    "columns": {
+      "Full Name": [""],
+      "Email": [""],
+      "Phone": [""],
+      "Company": [""]
+    },
+    "expected": {"Full Name": "full_name", "Email": "email", "Phone": "phone", "Company": "company"}
+  },
+  {
+    "name": "domain column is not an email",
+    "columns": {
+      "Person": ["Ana Rao"],
+      "Website": ["acme.com", "globex.com"],
+      "Contact At": ["ana@acme.com"],
+      "Mobile": ["9876543210"]
+    },
+    "expected": {"Person": "full_name", "Website": null, "Contact At": "email", "Mobile": "phone"}
   }
 ]
