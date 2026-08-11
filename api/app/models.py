@@ -68,7 +68,9 @@ class StagedRow(Base):
     row_index: Mapped[int] = mapped_column(Integer)
 
     data: Mapped[dict] = mapped_column(JSON)
-    errors: Mapped[dict | None] = mapped_column(JSON)
+    # none_as_null, or SQLAlchemy stores Python None as the JSON value `null`
+    # and "errors IS NOT NULL" matches every row.
+    errors: Mapped[dict | None] = mapped_column(JSON(none_as_null=True))
 
     import_: Mapped[Import] = relationship(back_populates="rows")
 

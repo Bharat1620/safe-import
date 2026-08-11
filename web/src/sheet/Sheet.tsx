@@ -302,7 +302,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                   className="shrink-0 border-r border-slate-100 px-2 text-right leading-[25px] text-slate-400 tabular-nums"
                   style={{ width: GUTTER_WIDTH }}
                 >
-                  {index + 1}
+                  {row?.rowNumber ?? index + 1}
                 </div>
                 {columns.map((column, col) => {
                   const isActive =

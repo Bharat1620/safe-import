@@ -6,6 +6,9 @@ export interface Row {
   cells: Record<string, CellValue>
   /** Field-level validation errors, keyed by column. */
   errors?: Record<string, string> | null
+  /** Position in the source data, shown in the gutter. Differs from `index`
+   *  when the source is filtered. */
+  rowNumber?: number
 }
 
 export interface ColumnDef {

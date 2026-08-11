@@ -28,6 +28,8 @@ class RowOut(BaseModel):
     index: int
     cells: dict[str, str]
     errors: dict[str, str] | None = None
+    # Position in the original file. Differs from index when filtering.
+    row_number: int | None = None
 
 
 class RowsPage(BaseModel):

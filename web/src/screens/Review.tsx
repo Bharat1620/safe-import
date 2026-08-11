@@ -34,16 +34,26 @@ export function Review({
 
   // Bumped after remapping so the grid throws away its cache and refetches.
   const [revision, setRevision] = useState(0);
+  const [errorsOnly, setErrorsOnly] = useState(false);
+  const [errorCount, setErrorCount] = useState<number | null>(null);
 
   useEffect(() => {
     void getImport(importId).then(setInfo).catch(() => {});
   }, [importId]);
 
   const dataSource = useMemo(
-    () => new ApiSource(importId),
+    () => new ApiSource(importId, errorsOnly),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [importId, revision],
+    [importId, revision, errorsOnly],
   );
+
+  // Refetched on every edit and remap, since fixing a cell changes the count.
+  useEffect(() => {
+    void new ApiSource(importId, true)
+      .getTotalCount()
+      .then(setErrorCount)
+      .catch(() => {});
+  }, [importId, revision, errorsOnly]);
 
   const remap = useCallback(
     async (header: string, field: string) => {
@@ -110,6 +120,25 @@ export function Review({
           {error}
         </p>
       )}
+
+      <div className="flex items-center gap-3 text-sm">
+        <span className={errorCount ? "text-rose-700" : "text-slate-500"}>
+          {errorCount === null
+            ? " "
+            : errorCount === 0
+              ? "Every row is valid"
+              : `${errorCount.toLocaleString()} row${errorCount === 1 ? "" : "s"} need attention`}
+        </span>
+        {errorCount !== null && errorCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setErrorsOnly((v) => !v)}
+            className="rounded border border-slate-300 px-2 py-0.5"
+          >
+            {errorsOnly ? "Show all rows" : "Show only these"}
+          </button>
+        )}
+      </div>
 
       <div className="min-h-0 flex-1">
         <Sheet dataSource={dataSource} columns={COLUMNS} />
