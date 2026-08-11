@@ -12,5 +12,9 @@ class Settings(BaseSettings):
     # Rows above this go to a background job instead of being processed inline.
     inline_row_limit: int = 20_000
 
+    # Unset means column mapping stays on the heuristic path.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+
 
 settings = Settings()

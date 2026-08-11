@@ -9,8 +9,17 @@ class ImportOut(BaseModel):
     status: str
     total_rows: int
     created_at: datetime
+    headers: list[str] | None = None
+    mapping: dict[str, str] | None = None
+    mapping_confidence: dict[str, float] | None = None
 
     model_config = {"from_attributes": True}
+
+
+class MappingIn(BaseModel):
+    """{csv column -> canonical field}. Columns left out are ignored."""
+
+    mapping: dict[str, str]
 
 
 class RowOut(BaseModel):

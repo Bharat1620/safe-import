@@ -4,6 +4,8 @@ export interface Row {
   /** Absolute index in the full dataset, not the position within a window. */
   index: number
   cells: Record<string, CellValue>
+  /** Field-level validation errors, keyed by column. */
+  errors?: Record<string, string> | null
 }
 
 export interface ColumnDef {

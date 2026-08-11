@@ -1,0 +1,203 @@
+[
+  {
+    "name": "clean headers",
+    "columns": {
+      "full_name": ["Ana Rao", "Bharat Silva"],
+      "email": ["ana@x.com", "bharat@x.com"],
+      "phone": ["9876543210", "9123456789"],
+      "company": ["Acme", "Globex"]
+    },
+    "expected": {"full_name": "full_name", "email": "email", "phone": "phone", "company": "company"}
+  },
+  {
+    "name": "title case with spaces",
+    "columns": {
+      "Full Name": ["Ana Rao"],
+      "Email Address": ["ana@x.com"],
+      "Phone Number": ["9876543210"],
+      "Company Name": ["Acme"]
+    },
+    "expected": {"Full Name": "full_name", "Email Address": "email", "Phone Number": "phone", "Company Name": "company"}
+  },
+  {
+    "name": "crm export",
+    "columns": {
+      "Contact Name": ["Ana Rao"],
+      "Primary Email": ["ana@x.com"],
+      "Mobile": ["9876543210"],
+      "Account": ["Acme"]
+    },
+    "expected": {"Contact Name": "full_name", "Primary Email": "email", "Mobile": "phone", "Account": "company"}
+  },
+  {
+    "name": "opaque headers, values decide",
+    "columns": {
+      "Col1": ["Ana Rao", "Bharat Silva"],
+      "Col2": ["ana@x.com", "bharat@x.com"],
+      "Col3": ["9876543210", "9123456789"],
+      "Col4": ["Acme", "Globex"]
+    },
+    "expected": {"Col1": "full_name", "Col2": "email", "Col3": "phone", "Col4": "company"}
+  },
+  {
+    "name": "extra columns to ignore",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Email": ["ana@x.com"],
+      "Lead Score": ["87"],
+      "Created At": ["2024-01-05"],
+      "Employer": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "Email": "email", "Lead Score": null, "Created At": null, "Employer": "company"}
+  },
+  {
+    "name": "snake case",
+    "columns": {
+      "customer_name": ["Ana Rao"],
+      "email_id": ["ana@x.com"],
+      "contact_number": ["9876543210"],
+      "organisation": ["Acme"]
+    },
+    "expected": {"customer_name": "full_name", "email_id": "email", "contact_number": "phone", "organisation": "company"}
+  },
+  {
+    "name": "abbreviations",
+    "columns": {
+      "nm": ["Ana Rao"],
+      "eml": ["ana@x.com"],
+      "tel": ["9876543210"],
+      "org": ["Acme"]
+    },
+    "expected": {"nm": "full_name", "eml": "email", "tel": "phone", "org": "company"}
+  },
+  {
+    "name": "misspelled",
+    "columns": {
+      "Ful Name": ["Ana Rao"],
+      "Emial": ["ana@x.com"],
+      "Phne": ["9876543210"],
+      "Compnay": ["Acme"]
+    },
+    "expected": {"Ful Name": "full_name", "Emial": "email", "Phne": "phone", "Compnay": "company"}
+  },
+  {
+    "name": "two phone-like columns",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Email": ["ana@x.com"],
+      "Mobile": ["9876543210"],
+      "Landline": ["02212345678"]
+    },
+    "expected": {"Name": "full_name", "Email": "email", "Mobile": "phone", "Landline": null}
+  },
+  {
+    "name": "no email column",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Phone": ["9876543210"],
+      "Company": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "Phone": "phone", "Company": "company"}
+  },
+  {
+    "name": "email in a column called user",
+    "columns": {
+      "user": ["ana@x.com"],
+      "display": ["Ana Rao"],
+      "cell": ["9876543210"],
+      "team": ["Acme"]
+    },
+    "expected": {"user": "email", "display": "full_name", "cell": "phone", "team": "company"}
+  },
+  {
+    "name": "german headers",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "E-Mail": ["ana@x.com"],
+      "Telefon": ["9876543210"],
+      "Firma": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "E-Mail": "email", "Telefon": "phone", "Firma": "company"}
+  },
+  {
+    "name": "uppercase",
+    "columns": {
+      "FULL_NAME": ["Ana Rao"],
+      "EMAIL": ["ana@x.com"],
+      "PHONE": ["9876543210"],
+      "COMPANY": ["Acme"]
+    },
+    "expected": {"FULL_NAME": "full_name", "EMAIL": "email", "PHONE": "phone", "COMPANY": "company"}
+  },
+  {
+    "name": "numeric-looking company codes",
+    "columns": {
+      "Person": ["Ana Rao"],
+      "Contact": ["ana@x.com"],
+      "Number": ["9876543210"],
+      "Org Code": ["ACME-01"]
+    },
+    "expected": {"Person": "full_name", "Contact": "email", "Number": "phone", "Org Code": "company"}
+  },
+  {
+    "name": "address columns present",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Email": ["ana@x.com"],
+      "Street": ["12 Long Road"],
+      "City": ["Mumbai"],
+      "Company": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "Email": "email", "Street": null, "City": null, "Company": "company"}
+  },
+  {
+    "name": "work email",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Work Email": ["ana@acme.com"],
+      "Phone": ["9876543210"],
+      "Company": ["Acme"]
+    },
+    "expected": {"Name": "full_name", "Work Email": "email", "Phone": "phone", "Company": "company"}
+  },
+  {
+    "name": "id column first",
+    "columns": {
+      "ID": ["1001"],
+      "Name": ["Ana Rao"],
+      "Email": ["ana@x.com"],
+      "Mobile No.": ["9876543210"]
+    },
+    "expected": {"ID": null, "Name": "full_name", "Email": "email", "Mobile No.": "phone"}
+  },
+  {
+    "name": "phone with country code prefix",
+    "columns": {
+      "Contact Person": ["Ana Rao"],
+      "Mail": ["ana@x.com"],
+      "Tel (with country code)": ["+91 98765 43210"],
+      "Business": ["Acme"]
+    },
+    "expected": {"Contact Person": "full_name", "Mail": "email", "Tel (with country code)": "phone", "Business": "company"}
+  },
+  {
+    "name": "notes column that mentions email",
+    "columns": {
+      "Name": ["Ana Rao"],
+      "Notes": ["emailed on tuesday"],
+      "Email": ["ana@x.com"],
+      "Phone": ["9876543210"]
+    },
+    "expected": {"Name": "full_name", "Notes": null, "Email": "email", "Phone": "phone"}
+  },
+  {
+    "name": "everything unhelpful",
+    "columns": {
+      "a": ["Ana Rao"],
+      "b": ["ana@x.com"],
+      "c": ["9876543210"],
+      "d": ["Acme"]
+    },
+    "expected": {"a": "full_name", "b": "email", "c": "phone", "d": "company"}
+  }
+]

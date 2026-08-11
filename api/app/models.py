@@ -35,6 +35,9 @@ class Import(Base):
     mapping: Mapped[dict | None] = mapped_column(JSON)
     headers: Mapped[list | None] = mapped_column(JSON)
 
+    # {csv column -> 0..1}. Drives review order, not just display.
+    mapping_confidence: Mapped[dict | None] = mapped_column(JSON)
+
     # Kept so a background job can stage the rows after the request returns.
     # Fine at demo sizes; a real deployment would put this in object storage.
     raw_csv: Mapped[bytes | None] = mapped_column(LargeBinary)

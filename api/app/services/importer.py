@@ -176,8 +176,6 @@ def run_job(session: Session, job_id: int) -> None:
 
         imp.status = "review"
         imp.total_rows = len(rows)
-        # The file is staged now; keeping the blob would just waste storage.
-        imp.raw_csv = None
         job.status = "done"
         session.commit()
 

@@ -312,6 +312,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                     index <= bottom &&
                     col >= left &&
                     col <= right;
+                  const error = row?.errors?.[column.key];
 
                   return (
                     <div
@@ -319,6 +320,8 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                       role="gridcell"
                       aria-colindex={col + 1}
                       aria-selected={inSelection}
+                      aria-invalid={error ? true : undefined}
+                      title={error}
                       onMouseDown={(e) =>
                         cursor.moveTo({ row: index, col }, e.shiftKey)
                       }
@@ -327,10 +330,11 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                       }
                       className={[
                         "shrink-0 overflow-hidden border-r border-slate-100 px-2 leading-[25px] whitespace-nowrap",
+                        error ? "bg-rose-50 text-rose-900" : "",
                         isActive
                           ? "outline-2 -outline-offset-2 outline-sky-500"
                           : inSelection
-                            ? "bg-sky-50"
+                            ? "bg-sky-100"
                             : "",
                       ].join(" ")}
                       style={{ width: column.width }}

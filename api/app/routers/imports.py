@@ -5,9 +5,15 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db import get_session
 from app.models import Import, Job
-from app.schemas import CommitOut, ImportOut, UploadOut
-from app.services.importer import commit_import, parse_csv, run_job, stage_rows
-from app.services.mapping import guess_mapping
+from app.schemas import CommitOut, ImportOut, MappingIn, UploadOut
+from app.services.importer import (
+    clear_staged,
+    commit_import,
+    parse_csv,
+    run_job,
+    stage_rows,
+)
+from app.services.llm_mapping import suggest_mapping
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -45,14 +51,20 @@ def upload(
     if not headers:
         raise HTTPException(400, "Could not read any columns from that file")
 
+    # One call per file. Falls back to the heuristic mapper if the model is
+    # unavailable, so a mapping failure never blocks an import.
+    suggestions = suggest_mapping(headers, rows)
+
     imp = Import(
         filename=file.filename or "upload.csv",
         status="mapping",
         total_rows=len(rows),
         idempotency_key=idempotency_key,
         headers=headers,
-        # Heuristic first pass; the user confirms or overrides it.
-        mapping=guess_mapping(headers),
+        mapping={s["column"]: s["field"] for s in suggestions if s["field"]},
+        mapping_confidence={s["column"]: s["confidence"] for s in suggestions},
+        # Kept until commit so the file can be re-staged under a new mapping.
+        raw_csv=raw,
     )
     session.add(imp)
     session.flush()  # assigns imp.id without ending the transaction
@@ -63,7 +75,6 @@ def upload(
         session.commit()
         return UploadOut(import_id=imp.id, total_rows=len(rows))
 
-    imp.raw_csv = raw
     job = Job(import_id=imp.id, total_rows=len(rows))
     session.add(job)
     # The import and its job are created together, so a crash cannot leave an
@@ -78,6 +89,37 @@ def get_import(import_id: int, session: Session = Depends(get_session)):
     imp = session.get(Import, import_id)
     if imp is None:
         raise HTTPException(404, "Import not found")
+    return imp
+
+
+@router.put("/{import_id}/mapping", response_model=ImportOut)
+def set_mapping(
+    import_id: int,
+    payload: MappingIn,
+    session: Session = Depends(get_session),
+):
+    """
+    Re-stages the file under a new {csv column -> field} mapping.
+
+    Staged rows are derived data, so the honest way to change the mapping is to
+    rebuild them. Edits made before remapping are discarded, which is why the UI
+    asks for confirmation once any editing has happened.
+    """
+    imp = session.get(Import, import_id)
+    if imp is None:
+        raise HTTPException(404, "Import not found")
+    if imp.status == "committed":
+        raise HTTPException(409, "This import has already been committed")
+    if imp.raw_csv is None:
+        raise HTTPException(409, "The uploaded file is no longer available")
+
+    _, rows = parse_csv(imp.raw_csv)
+    imp.mapping = payload.mapping
+    clear_staged(session, import_id)
+    stage_rows(session, import_id, rows, payload.mapping)
+    imp.total_rows = len(rows)
+    imp.status = "review"
+    session.commit()
     return imp
 
 
@@ -118,6 +160,8 @@ def commit(
         return CommitOut(committed=0, rejected=len(rejects), rejects=rejects)
 
     imp.status = "committed"
+    # Remapping is no longer possible, so the uploaded blob is dead weight.
+    imp.raw_csv = None
     session.commit()
     return CommitOut(
         committed=committed, rejected=len(rejects), rejects=rejects
