@@ -1,13 +1,3 @@
----
-title: Safe Import API
-emoji: 📥
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Safe Import API
 
 FastAPI backend for [Safe Import](https://github.com/Bharat1620/safe-import) — CSV

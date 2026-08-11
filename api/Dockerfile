@@ -16,9 +16,9 @@ USER app
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
-# 7860 is what Hugging Face Spaces expects; Render and Cloud Run pass their own.
-ENV PORT=7860
-EXPOSE 7860
+# Hosts pass their own PORT; this is only the local default.
+ENV PORT=8000
+EXPOSE 8000
 
 # Migrations run at startup so a schema change ships with the code that needs it.
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
