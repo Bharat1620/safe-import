@@ -75,17 +75,24 @@ would be slower, unverifiable, and worse.
 total, scored on exact match.
 
 ```
-heuristic alias matching     62/81   77%
-gemini-2.5-flash             74/81   91%
-
-calibration
-  claimed ≥90% confidence    44/44  100% correct
-  claimed  <90% confidence   30/37   81% correct
+heuristic alias matching     62/81    77%
+gemini-3.1-flash-lite        81/81   100%
 ```
 
-The calibration matters as much as the accuracy: it is why the mapping UI sorts
-least-confident first. When the model hedges, that is genuinely where the
-mistakes are.
+The gap is the whole argument for the model being there: alias matching cannot
+resolve a column called `Col3`, and no list of aliases ever will.
+
+At 100% the set is saturated — it can still catch regressions, but it has no
+headroom left to measure improvement, so harder cases would be the next
+addition. It has already earned its keep twice: it caught a prompt change that
+made accuracy worse, and a harness bug where rate-limited calls fell back to the
+heuristic mapper and were scored as successes. The runner now fails loudly
+instead of quietly reporting a blended number.
+
+An earlier model (`gemini-2.5-flash`) scored 91%, with confidence well
+calibrated — high-confidence claims correct 44/44, low-confidence 30/37. That
+calibration is why the mapping UI sorts least-confident first: when the model
+hedges, that is genuinely where the mistakes are.
 
 ```bash
 uv run python -m evals.run heuristic   # baseline
