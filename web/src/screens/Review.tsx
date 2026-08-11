@@ -88,22 +88,23 @@ export function Review({
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
-      <div className="flex items-baseline gap-3">
+    <div className="flex h-full flex-col gap-4 p-6">
+      <header className="flex items-baseline gap-3">
         <button
           type="button"
           onClick={onDone}
           className="text-sm text-sky-600 underline underline-offset-2"
         >
-          ← back
+          Imports
         </button>
-        <h1 className="font-semibold text-slate-800">
+        <span className="text-slate-300">/</span>
+        <h1 className="font-semibold text-slate-900">
           {info?.filename ?? "Import"}
         </h1>
         <span className="ml-auto text-sm text-slate-500 tabular-nums">
           {info?.total_rows.toLocaleString()} rows
         </span>
-      </div>
+      </header>
 
       {info?.headers && <MappingBar info={info} busy={busy} onChange={remap} />}
 
@@ -114,7 +115,11 @@ export function Review({
       )}
 
       <div className="flex items-center gap-3 text-sm">
-        <span className={errorCount ? "text-rose-700" : "text-slate-500"}>
+        <span
+          className={
+            errorCount ? "font-medium text-rose-700" : "text-slate-500"
+          }
+        >
           {errorCount === null
             ? " "
             : errorCount === 0
@@ -125,9 +130,14 @@ export function Review({
           <button
             type="button"
             onClick={() => setErrorsOnly((v) => !v)}
-            className="rounded border border-slate-300 px-2 py-0.5"
+            className={[
+              "rounded-md border px-2 py-0.5",
+              errorsOnly
+                ? "border-rose-300 bg-rose-50 text-rose-700"
+                : "border-slate-300 hover:bg-slate-50",
+            ].join(" ")}
           >
-            {errorsOnly ? "Show all rows" : "Show only these"}
+            {errorsOnly ? "Showing errors only" : "Show only these"}
           </button>
         )}
       </div>
@@ -136,8 +146,8 @@ export function Review({
         <Sheet dataSource={dataSource} columns={COLUMNS} />
       </div>
 
-      <div className="flex items-center gap-4 text-sm">
-        <label className="flex items-center gap-2">
+      <div className="flex items-center gap-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <label className="flex items-center gap-2 text-slate-700">
           <input
             type="radio"
             checked={partial}
@@ -145,19 +155,19 @@ export function Review({
           />
           Import valid rows, list the rest as rejects
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-slate-700">
           <input
             type="radio"
             checked={!partial}
             onChange={() => setPartial(false)}
           />
-          Cancel the whole import unless every row is valid
+          Cancel everything unless every row is valid
         </label>
         <button
           type="button"
           onClick={() => void commit()}
           disabled={busy}
-          className="ml-auto rounded bg-sky-600 px-4 py-1.5 font-medium text-white disabled:opacity-50"
+          className="ml-auto rounded-md bg-sky-600 px-4 py-1.5 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
         >
           {busy ? "Committing…" : "Commit"}
         </button>
