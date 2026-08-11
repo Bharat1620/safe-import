@@ -231,6 +231,11 @@ export function Sheet({ dataSource, columns }: SheetProps) {
   const indices: number[] = [];
   for (let i = startIndex; i < endIndex; i++) indices.push(i);
 
+  // totalCount is null until the count arrives, which also happens whenever the
+  // data source changes. Without this the grid is simply blank meanwhile.
+  const loading = totalCount === null;
+  const skeletonCount = Math.max(visibleCount, 12);
+
   const totalWidth =
     GUTTER_WIDTH + columns.reduce((sum, column) => sum + column.width, 0);
 
@@ -276,6 +281,32 @@ export function Sheet({ dataSource, columns }: SheetProps) {
           which at 26px rows is ~650k rows — hence the 500k demo cap.
         */}
         <div style={{ height: rowCount * ROW_HEIGHT, width: totalWidth }} />
+
+        {loading && (
+          <div className="absolute top-0 left-0 w-full">
+            {Array.from({ length: skeletonCount }, (_, i) => (
+              <div
+                key={i}
+                className="flex border-b border-slate-100"
+                style={{ height: ROW_HEIGHT }}
+              >
+                <div
+                  className="shrink-0 border-r border-slate-100"
+                  style={{ width: GUTTER_WIDTH }}
+                />
+                {columns.map((column) => (
+                  <div
+                    key={column.key}
+                    className="shrink-0 border-r border-slate-100 px-2"
+                    style={{ width: column.width }}
+                  >
+                    <span className="my-[7px] block h-3 w-3/4 animate-pulse rounded bg-slate-100" />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/*
           Shifted so the ~40 rendered rows sit exactly where rows

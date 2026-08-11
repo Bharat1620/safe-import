@@ -15,9 +15,16 @@ export class ApiSource implements SheetDataSource {
    */
   private rowNumbers = new Map<number, number>();
 
-  constructor(importId: number, errorsOnly = false) {
+  private readonly onErrorCount?: (n: number) => void;
+
+  constructor(
+    importId: number,
+    errorsOnly = false,
+    onErrorCount?: (n: number) => void,
+  ) {
     this.importId = importId;
     this.errorsOnly = errorsOnly;
+    this.onErrorCount = onErrorCount;
   }
 
   private query(extra = "") {
@@ -26,19 +33,33 @@ export class ApiSource implements SheetDataSource {
     }`;
   }
 
+  /**
+   * Resolved by the first getRows response, which carries the total. Asking for
+   * the count separately would be a second round trip before a row appears.
+   */
+  private total?: Promise<number>;
+  private resolveTotal!: (n: number) => void;
+
   async getTotalCount(): Promise<number> {
-    const r = await fetch(this.query("/rows/count"));
-    if (!r.ok) throw new Error("Could not read the row count");
-    const { count } = (await r.json()) as { count: number };
-    return count;
+    this.total ??= new Promise<number>((resolve) => {
+      this.resolveTotal = resolve;
+    });
+    return this.total;
   }
 
   async getRows(offset: number, limit: number): Promise<Row[]> {
     const r = await fetch(this.query(`/rows?offset=${offset}&limit=${limit}`));
     if (!r.ok) throw new Error("Could not read rows");
-    const { rows } = (await r.json()) as {
+    const { rows, total, error_count } = (await r.json()) as {
       rows: (Row & { row_number?: number })[];
+      total: number;
+      error_count: number;
     };
+
+    void this.getTotalCount();
+    this.resolveTotal?.(total);
+    this.onErrorCount?.(error_count);
+
     return rows.map(({ row_number, ...row }) => {
       if (row_number !== undefined) {
         this.rowNumbers.set(row.index, row_number);

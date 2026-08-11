@@ -42,18 +42,10 @@ export function Review({
   }, [importId]);
 
   const dataSource = useMemo(
-    () => new ApiSource(importId, errorsOnly),
+    () => new ApiSource(importId, errorsOnly, setErrorCount),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [importId, revision, errorsOnly],
   );
-
-  // Refetched on every edit and remap, since fixing a cell changes the count.
-  useEffect(() => {
-    void new ApiSource(importId, true)
-      .getTotalCount()
-      .then(setErrorCount)
-      .catch(() => {});
-  }, [importId, revision, errorsOnly]);
 
   const remap = useCallback(
     async (header: string, field: string) => {

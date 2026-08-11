@@ -21,33 +21,33 @@ def _has_errors():
     )
 
 
+def _total(session: Session, import_id: int, errors_only: bool) -> int:
+    if errors_only:
+        return (
+            session.scalar(
+                select(func.count())
+                .select_from(StagedRow)
+                .where(StagedRow.import_id == import_id, _has_errors())
+            )
+            or 0
+        )
+
+    last = session.scalar(
+        select(StagedRow.row_index)
+        .where(StagedRow.import_id == import_id)
+        .order_by(StagedRow.row_index.desc())
+        .limit(1)
+    )
+    return (last + 1) if last is not None else 0
+
+
 @router.get("/rows/count", response_model=CountOut)
 def count(
     import_id: int,
     errors_only: bool = False,
     session: Session = Depends(get_session),
 ):
-    """The grid needs this before anything else — it sizes the scrollbar."""
-    if errors_only:
-        return CountOut(
-            count=session.scalar(
-                select(func.count())
-                .select_from(StagedRow)
-                .where(
-                    StagedRow.import_id == import_id,
-                    _has_errors(),
-                )
-            )
-            or 0
-        )
-
-    total = session.scalar(
-        select(StagedRow.row_index)
-        .where(StagedRow.import_id == import_id)
-        .order_by(StagedRow.row_index.desc())
-        .limit(1)
-    )
-    return CountOut(count=(total + 1) if total is not None else 0)
+    return CountOut(count=_total(session, import_id, errors_only))
 
 
 @router.get("/rows", response_model=RowsPage)
@@ -84,7 +84,10 @@ def get_rows(
         # Filtered rows are not contiguous, but the grid positions rows at
         # index * ROW_HEIGHT. So index becomes the position within the filtered
         # set, and row_number carries the real position in the file.
+        errors = _total(session, import_id, True)
         return RowsPage(
+            total=errors,
+            error_count=errors,
             rows=[
                 RowOut(
                     index=offset + i,
@@ -93,7 +96,7 @@ def get_rows(
                     errors=r.errors,
                 )
                 for i, r in enumerate(rows)
-            ]
+            ],
         )
 
     rows = session.scalars(
@@ -107,6 +110,8 @@ def get_rows(
     ).all()
 
     return RowsPage(
+        total=_total(session, import_id, False),
+        error_count=_total(session, import_id, True),
         rows=[
             RowOut(
                 index=r.row_index,
@@ -115,7 +120,7 @@ def get_rows(
                 errors=r.errors,
             )
             for r in rows
-        ]
+        ],
     )
 
 

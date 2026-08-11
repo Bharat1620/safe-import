@@ -32,8 +32,9 @@ export function useWindowedRows(
   }, [dataSource]);
 
   useEffect(() => {
-    if (totalCount === null) return;
-
+    // Not gated on totalCount: the window comes from scroll position and
+    // viewport height, both known on the first render, so the first chunk can
+    // be fetched alongside the count rather than after it.
     const firstChunk = Math.floor(startIndex / CHUNK_SIZE);
     // endIndex is exclusive; max() guards endIndex 0 asking for a negative offset.
     const lastChunk = Math.floor(

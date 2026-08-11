@@ -34,6 +34,8 @@ class RowOut(BaseModel):
 
 class RowsPage(BaseModel):
     rows: list[RowOut]
+    total: int
+    error_count: int
 
 
 class CountOut(BaseModel):
