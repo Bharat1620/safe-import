@@ -5,9 +5,15 @@ interface ProcessingProps {
   importId: number;
   jobId: number;
   onDone: () => void;
+  onCancel: () => void;
 }
 
-export function Processing({ importId, jobId, onDone }: ProcessingProps) {
+export function Processing({
+  importId,
+  jobId,
+  onDone,
+  onCancel,
+}: ProcessingProps) {
   const [job, setJob] = useState<{
     status: string;
     processed_rows: number;
@@ -52,7 +58,16 @@ export function Processing({ importId, jobId, onDone }: ProcessingProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-3 py-24">
-      <h2 className="font-medium text-slate-800">Processing your file</h2>
+      <div className="flex items-baseline gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm text-sky-600 underline underline-offset-2"
+        >
+          ← back
+        </button>
+        <h2 className="font-medium text-slate-800">Processing your file</h2>
+      </div>
 
       <div className="h-2 overflow-hidden rounded bg-slate-100">
         <div

@@ -35,6 +35,7 @@ export default function App() {
         importId={stage.importId}
         jobId={stage.jobId}
         onDone={() => setStage({ name: "review", importId: stage.importId })}
+        onCancel={() => setStage({ name: "upload" })}
       />
     );
   }

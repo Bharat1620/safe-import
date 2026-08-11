@@ -87,11 +87,18 @@ export function Review({
 
   return (
     <div className="flex h-full flex-col gap-3 p-4">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline gap-3">
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-sm text-sky-600 underline underline-offset-2"
+        >
+          ← back
+        </button>
         <h1 className="font-semibold text-slate-800">
           {info?.filename ?? "Import"}
         </h1>
-        <span className="text-sm text-slate-500 tabular-nums">
+        <span className="ml-auto text-sm text-slate-500 tabular-nums">
           {info?.total_rows.toLocaleString()} rows
         </span>
       </div>

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { uploadCsv } from "../api/client";
 
 interface UploadProps {
@@ -11,6 +11,15 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
+
+  // The API sleeps when idle on free hosting, so the first request can take
+  // most of a minute. An unexplained spinner reads as broken; this does not.
+  useEffect(() => {
+    if (!busy) return setSlow(false);
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(timer);
+  }, [busy]);
 
   async function send(file: File) {
     setBusy(true);
@@ -57,6 +66,13 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
       >
         {busy ? "Uploading…" : "Drop a CSV here, or click to choose one"}
       </button>
+
+      {slow && (
+        <p className="text-sm text-slate-500">
+          The API sleeps when idle on free hosting — waking it up can take up to
+          a minute. Later requests are fast.
+        </p>
+      )}
 
       <input
         ref={inputRef}
