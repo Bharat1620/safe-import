@@ -21,6 +21,7 @@ export function useWindowedRows(
 
   useEffect(() => {
     let cancelled = false;
+    setTotalCount(null);
     dataSource.getTotalCount().then((count) => {
       if (!cancelled) setTotalCount(count);
     });
