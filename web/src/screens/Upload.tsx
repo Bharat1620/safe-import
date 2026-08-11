@@ -4,9 +4,10 @@ import { uploadCsv, uploadSample, type UploadResult } from "../api/client";
 interface UploadProps {
   onUploaded: (importId: number, jobId: number | null) => void;
   onDemo: () => void;
+  onImports: () => void;
 }
 
-export function Upload({ onUploaded, onDemo }: UploadProps) {
+export function Upload({ onUploaded, onDemo, onImports }: UploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,7 +22,6 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
     return () => clearTimeout(timer);
   }, [busy]);
 
-  // Shared by the file drop and the sample button — only the call differs.
   async function start(run: () => Promise<UploadResult>) {
     setBusy(true);
     setError(null);
@@ -38,16 +38,26 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
   const send = (file: File) => start(() => uploadCsv(file));
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 py-16">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-800">Safe Import</h1>
-        <p className="text-sm text-slate-500">
-          Drop a CSV of contacts. Nothing is written until you commit.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-16">
+      <header className="flex items-baseline gap-3">
+        <h1 className="text-xl font-semibold text-slate-900">Safe Import</h1>
+        <button
+          type="button"
+          onClick={onImports}
+          className="ml-auto text-sm text-sky-600 underline underline-offset-2"
+        >
+          Past imports
+        </button>
+      </header>
+
+      <p className="text-slate-600">
+        Drop a messy CSV of contacts. Columns are matched to a fixed schema,
+        every row is validated, and nothing is written until you commit.
+      </p>
 
       <button
         type="button"
+        disabled={busy}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -61,21 +71,15 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
           if (file) void send(file);
         }}
         className={[
-          "rounded-lg border-2 border-dashed px-6 py-16 text-sm transition",
+          "rounded-xl border-2 border-dashed px-6 py-16 text-sm transition",
           dragging
             ? "border-sky-400 bg-sky-50 text-sky-700"
-            : "border-slate-300 text-slate-500 hover:border-slate-400",
+            : "border-slate-300 text-slate-500 hover:border-slate-400 hover:bg-slate-50",
+          busy ? "opacity-60" : "",
         ].join(" ")}
       >
-        {busy ? "Uploading…" : "Drop a CSV here, or click to choose one"}
+        {busy ? "Working…" : "Drop a CSV here, or click to choose one"}
       </button>
-
-      {slow && (
-        <p className="text-sm text-slate-500">
-          The API sleeps when idle on free hosting — waking it up can take up to
-          a minute. Later requests are fast.
-        </p>
-      )}
 
       <input
         ref={inputRef}
@@ -88,13 +92,20 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
         }}
       />
 
+      {slow && (
+        <p className="text-sm text-slate-500">
+          The API sleeps when idle on free hosting — waking it can take up to a
+          minute. Everything after that is fast.
+        </p>
+      )}
+
       {error && (
-        <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {error}
         </p>
       )}
 
-      <div className="flex flex-col gap-1 text-sm text-slate-500">
+      <div className="flex flex-col gap-1.5 border-t border-slate-200 pt-5 text-sm text-slate-500">
         <p>
           No file to hand?{" "}
           <button
@@ -114,7 +125,7 @@ export function Upload({ onUploaded, onDemo }: UploadProps) {
             onClick={onDemo}
             className="text-sky-600 underline underline-offset-2"
           >
-            open the 500,000 row grid demo
+            open the 500,000 row grid
           </button>{" "}
           — no upload, no backend.
         </p>

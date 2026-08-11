@@ -96,6 +96,13 @@ def _create_import(
     return UploadOut(import_id=imp.id, total_rows=len(rows), job_id=job.id)
 
 
+@router.get("", response_model=list[ImportOut])
+def list_imports(limit: int = 50, session: Session = Depends(get_session)):
+    return session.scalars(
+        select(Import).order_by(Import.created_at.desc()).limit(limit)
+    ).all()
+
+
 @router.post("/sample", response_model=UploadOut)
 def upload_sample(session: Session = Depends(get_session)):
     """

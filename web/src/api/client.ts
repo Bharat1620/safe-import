@@ -23,6 +23,7 @@ export interface ImportInfo {
   filename: string;
   status: string;
   total_rows: number;
+  created_at: string;
   headers: string[] | null;
   mapping: Record<string, string> | null;
   mapping_confidence: Record<string, number> | null;
@@ -60,6 +61,8 @@ export const uploadSample = () =>
   request<UploadResult>("/imports/sample", { method: "POST" });
 
 export const getImport = (id: number) => request<ImportInfo>(`/imports/${id}`);
+
+export const listImports = () => request<ImportInfo[]>("/imports");
 
 export const getJob = (id: number) => request<JobInfo>(`/jobs/${id}`);
 
