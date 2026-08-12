@@ -35,7 +35,7 @@ export function Landing({ onUploaded }: LandingProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-16">
+    <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-6 py-12">
       <header className="flex items-baseline gap-3">
         <span className="text-lg font-semibold tracking-tight text-slate-900">
           Safe Import
@@ -48,84 +48,91 @@ export function Landing({ onUploaded }: LandingProps) {
         </Link>
       </header>
 
-      <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold text-slate-900">
+      <div className="mt-10 flex flex-col gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
           Turn a messy CSV into clean data.
         </h1>
-        <ul className="flex flex-col gap-1 text-slate-600">
-          <li>Columns matched to a fixed schema, with confidence scores</li>
-          <li>Every row validated, and fixable in an editable grid</li>
-          <li>Commits atomically, or not at all</li>
+        <ul className="flex flex-col gap-1.5 text-sm text-slate-600">
+          <li className="flex gap-2">
+            <span className="text-slate-300">—</span>
+            Columns matched to a fixed schema, with confidence scores
+          </li>
+          <li className="flex gap-2">
+            <span className="text-slate-300">—</span>
+            Every row validated, and fixable in an editable grid
+          </li>
+          <li className="flex gap-2">
+            <span className="text-slate-300">—</span>
+            Committed atomically, or not at all
+          </li>
         </ul>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <button
           type="button"
           disabled={busy}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            const file = e.dataTransfer.files[0];
-            if (file) void start(() => uploadCsv(file));
-          }}
-          className={[
-            "rounded-xl border-2 border-dashed px-6 py-14 text-sm transition",
-            dragging
-              ? "border-sky-400 bg-sky-50 text-sky-700"
-              : "border-slate-300 text-slate-500 hover:border-slate-400 hover:bg-slate-50",
-            busy ? "opacity-60" : "",
-          ].join(" ")}
+          onClick={() => void start(() => uploadSample(25000))}
+          className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
         >
-          {busy ? "Working…" : "Drop a CSV here, or click to choose one"}
+          {busy ? "Working…" : "Try a sample import"}
         </button>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void start(() => uploadCsv(file));
-          }}
-        />
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void start(() => uploadSample(25000))}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-          >
-            Try a sample import
-          </button>
-          <span className="text-sm text-slate-500">
-            No file needed — 25,000 messy rows, processed as a background job.
-          </span>
-        </div>
+        <span className="text-sm text-slate-500">
+          No file needed — 25,000 messy rows, processed as a background job.
+        </span>
       </div>
 
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const file = e.dataTransfer.files[0];
+          if (file) void start(() => uploadCsv(file));
+        }}
+        className={[
+          "mt-4 rounded-lg border border-dashed px-6 py-6 text-sm transition",
+          dragging
+            ? "border-sky-400 bg-sky-50 text-sky-700"
+            : "border-slate-300 text-slate-500 hover:border-slate-400 hover:bg-slate-50",
+          busy ? "opacity-60" : "",
+        ].join(" ")}
+      >
+        Or drop your own CSV here
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void start(() => uploadCsv(file));
+        }}
+      />
+
       {slow && (
-        <p className="-mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm text-slate-500">
           The API sleeps when idle on free hosting — waking it can take up to a
           minute. Everything after that is fast.
         </p>
       )}
 
       {error && (
-        <p className="-mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {error}
         </p>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-slate-200 pt-6">
+      <div className="mt-10 flex flex-col gap-2 border-t border-slate-200 pt-6">
         <h2 className="font-medium text-slate-800">Just want to see the grid?</h2>
         <p className="text-sm text-slate-600">
           500,000 rows with about 40 in the DOM at any moment. Select a range,
@@ -133,11 +140,25 @@ export function Landing({ onUploaded }: LandingProps) {
         </p>
         <Link
           to="/demo"
-          className="self-start rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+          className="mt-1 self-start rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
         >
           Open the demo
         </Link>
       </div>
+
+      <footer className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-6 text-sm text-slate-500">
+        <span>
+          A personal project — React, TypeScript, FastAPI, Postgres, Gemini.
+        </span>
+        <a
+          href="https://github.com/Bharat1620/safe-import"
+          target="_blank"
+          rel="noreferrer"
+          className="text-sky-600 underline underline-offset-2"
+        >
+          Source on GitHub
+        </a>
+      </footer>
     </div>
   );
 }
