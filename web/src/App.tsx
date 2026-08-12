@@ -1,87 +1,102 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { DEMO_COLUMNS } from "./demo/generateRows";
 import { InMemorySource } from "./demo/InMemorySource";
 import { Imports } from "./screens/Imports";
+import { Landing } from "./screens/Landing";
 import { Processing } from "./screens/Processing";
 import { Review } from "./screens/Review";
-import { Upload } from "./screens/Upload";
 import { Sheet } from "./sheet/Sheet";
 
-type Stage =
-  | { name: "upload" }
-  | { name: "imports" }
-  | { name: "processing"; importId: number; jobId: number }
-  | { name: "review"; importId: number }
-  | { name: "demo" };
-
 export default function App() {
-  const [stage, setStage] = useState<Stage>({ name: "upload" });
-
-  const onUploaded = useCallback((importId: number, jobId: number | null) => {
-    setStage(
-      jobId === null
-        ? { name: "review", importId }
-        : { name: "processing", importId, jobId },
-    );
-  }, []);
-
-  if (stage.name === "upload") {
-    return (
-      <Upload
-        onUploaded={onUploaded}
-        onDemo={() => setStage({ name: "demo" })}
-        onImports={() => setStage({ name: "imports" })}
-      />
-    );
-  }
-
-  if (stage.name === "imports") {
-    return (
-      <Imports
-        onOpen={(importId) => setStage({ name: "review", importId })}
-        onBack={() => setStage({ name: "upload" })}
-      />
-    );
-  }
-
-  if (stage.name === "processing") {
-    return (
-      <Processing
-        importId={stage.importId}
-        jobId={stage.jobId}
-        onDone={() => setStage({ name: "review", importId: stage.importId })}
-        onCancel={() => setStage({ name: "upload" })}
-      />
-    );
-  }
-
-  if (stage.name === "review") {
-    return (
-      <Review
-        importId={stage.importId}
-        onDone={(to) =>
-          setStage(to === "upload" ? { name: "upload" } : { name: "imports" })
-        }
-      />
-    );
-  }
-
-  return <Demo onBack={() => setStage({ name: "upload" })} />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingRoute />} />
+        <Route path="/imports" element={<ImportsRoute />} />
+        <Route path="/imports/:id" element={<ReviewRoute />} />
+        <Route path="/imports/:id/processing" element={<ProcessingRoute />} />
+        <Route path="/demo" element={<DemoRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
 
-function Demo({ onBack }: { onBack: () => void }) {
+function LandingRoute() {
+  const navigate = useNavigate();
+  return (
+    <Landing
+      onUploaded={(importId, jobId) =>
+        navigate(
+          jobId === null
+            ? `/imports/${importId}`
+            : `/imports/${importId}/processing?job=${jobId}`,
+        )
+      }
+    />
+  );
+}
+
+function ImportsRoute() {
+  const navigate = useNavigate();
+  return <Imports onOpen={(id) => navigate(`/imports/${id}`)} />;
+}
+
+function ReviewRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const importId = Number(id);
+  if (!Number.isFinite(importId)) return <Navigate to="/imports" replace />;
+  return (
+    <Review
+      importId={importId}
+      onDone={(to) => navigate(to === "upload" ? "/" : "/imports")}
+    />
+  );
+}
+
+function ProcessingRoute() {
+  const { id } = useParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const importId = Number(id);
+  const jobId = Number(params.get("job"));
+  if (!Number.isFinite(importId) || !Number.isFinite(jobId)) {
+    return <Navigate to="/imports" replace />;
+  }
+  return (
+    <Processing
+      importId={importId}
+      jobId={jobId}
+      onDone={() => navigate(`/imports/${importId}`, { replace: true })}
+      onCancel={() => navigate("/imports")}
+    />
+  );
+}
+
+function DemoRoute() {
+  const navigate = useNavigate();
   const dataSource = useMemo(() => new InMemorySource(500_000), []);
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="flex items-baseline gap-3">
-        <h1 className="font-semibold text-slate-800">500,000 row demo</h1>
+        <h1 className="font-semibold text-slate-900">500,000 row demo</h1>
         <p className="text-sm text-slate-500">
           Generated in the browser. Select a range, paste, and undo with ⌘Z.
         </p>
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => navigate("/")}
           className="ml-auto text-sm text-sky-600 underline underline-offset-2"
         >
           Back

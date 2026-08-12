@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { listImports, type ImportInfo } from "../api/client";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -7,13 +8,7 @@ const STATUS_STYLES: Record<string, string> = {
   mapping: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-export function Imports({
-  onOpen,
-  onBack,
-}: {
-  onOpen: (importId: number) => void;
-  onBack: () => void;
-}) {
+export function Imports({ onOpen }: { onOpen: (importId: number) => void }) {
   const [imports, setImports] = useState<ImportInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,13 +24,12 @@ export function Imports({
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-8">
       <div className="flex items-baseline gap-3">
         <h1 className="text-lg font-semibold text-slate-800">Imports</h1>
-        <button
-          type="button"
-          onClick={onBack}
+        <Link
+          to="/"
           className="ml-auto text-sm text-sky-600 underline underline-offset-2"
         >
           New import
-        </button>
+        </Link>
       </div>
 
       {error && (
