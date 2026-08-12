@@ -1,7 +1,7 @@
 import csv
 import io
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Contact, Import, Job, StagedRow
@@ -147,8 +147,22 @@ def run_job(session: Session, job_id: int) -> None:
     saying exactly how far it got, so work resumes instead of restarting. That
     is also why it is safe to call this twice — it skips what is already staged.
     """
+    # Claiming the job in a single conditional UPDATE, not a read followed by a
+    # write. Two callers would both see "pending" in the gap between the two,
+    # then stage the same rows and collide on the unique index. Only one
+    # UPDATE can match, so only one caller proceeds.
+    claimed = session.execute(
+        update(Job)
+        .where(Job.id == job_id, Job.status.in_(("pending", "failed")))
+        .values(status="running")
+        .returning(Job.id)
+    ).scalar()
+    session.commit()
+    if claimed is None:
+        return
+
     job = session.get(Job, job_id)
-    if job is None or job.status in ("done", "running"):
+    if job is None:
         return
 
     imp = session.get(Import, job.import_id)
@@ -157,9 +171,6 @@ def run_job(session: Session, job_id: int) -> None:
         job.error = "Import or uploaded file is missing"
         session.commit()
         return
-
-    job.status = "running"
-    session.commit()
 
     try:
         _, rows = parse_csv(imp.raw_csv)
