@@ -231,64 +231,71 @@ function MappingBar({
   busy: boolean;
   onChange: (header: string, field: string) => void;
 }) {
-  // Least confident first — the point of a confidence score is to tell you
-  // where to look, not to decorate the row.
-  const headers = [...(info.headers ?? [])].sort(
-    (a, b) =>
-      (info.mapping_confidence?.[a] ?? 0) - (info.mapping_confidence?.[b] ?? 0),
+  const confidenceOf = (h: string) => info.mapping_confidence?.[h] ?? 0;
+  const sorted = [...(info.headers ?? [])].sort(
+    (a, b) => confidenceOf(a) - confidenceOf(b),
   );
 
-  const unsure = headers.filter(
-    (h) => (info.mapping_confidence?.[h] ?? 0) < 0.9,
-  ).length;
+  // Split rather than only sorted: in a wrapping row "first" just means
+  // leftmost, which reads as nothing. A separate group is the actual signal.
+  const unsure = sorted.filter((h) => confidenceOf(h) < 0.9);
+  const confident = sorted.filter((h) => confidenceOf(h) >= 0.9);
+
+  const field = (header: string) => {
+    const confidence = confidenceOf(header);
+    const review = confidence < 0.9;
+
+    return (
+      <label key={header} className="flex items-center gap-2">
+        <span className={review ? "font-medium text-amber-800" : "text-slate-500"}>
+          {header}
+        </span>
+        <span className="text-slate-300">→</span>
+        <select
+          value={info.mapping?.[header] ?? ""}
+          disabled={busy}
+          onChange={(e) => onChange(header, e.target.value)}
+          className={[
+            "rounded border bg-white px-1 py-0.5",
+            review ? "border-amber-400" : "border-slate-300",
+          ].join(" ")}
+        >
+          <option value="">ignore</option>
+          {FIELDS.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+        <span className="w-9 text-right text-xs text-slate-400 tabular-nums">
+          {Math.round(confidence * 100)}%
+        </span>
+      </label>
+    );
+  };
 
   return (
-    <div className="rounded border border-slate-200 bg-slate-50 p-3 text-sm">
-      <div className="mb-2 flex items-baseline gap-2">
-        <span className="font-medium text-slate-700">Column mapping</span>
-        <span className="text-slate-500">
-          {unsure > 0
-            ? `${unsure} suggestion${unsure > 1 ? "s" : ""} worth checking`
-            : "all columns matched confidently"}
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+      {unsure.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5">
+          <span className="font-medium text-amber-800">
+            {unsure.length} column{unsure.length > 1 ? "s" : ""} worth checking
+          </span>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {unsure.map(field)}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <span className="font-medium text-slate-700">
+          {unsure.length > 0
+            ? "Matched confidently"
+            : "Column mapping — all columns matched confidently"}
         </span>
-      </div>
-
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
-        {headers.map((header) => {
-          const confidence = info.mapping_confidence?.[header] ?? 0;
-          const review = confidence < 0.9;
-
-          return (
-            <label key={header} className="flex items-center gap-2">
-              <span
-                className={review ? "font-medium text-amber-700" : "text-slate-500"}
-              >
-                {review && "⚠ "}
-                {header}
-              </span>
-              <span className="text-slate-300">→</span>
-              <select
-                value={info.mapping?.[header] ?? ""}
-                disabled={busy}
-                onChange={(e) => onChange(header, e.target.value)}
-                className={[
-                  "rounded border bg-white px-1 py-0.5",
-                  review ? "border-amber-400" : "border-slate-300",
-                ].join(" ")}
-              >
-                <option value="">ignore</option>
-                {FIELDS.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-              <span className="w-9 text-right text-xs text-slate-400 tabular-nums">
-                {Math.round(confidence * 100)}%
-              </span>
-            </label>
-          );
-        })}
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {confident.map(field)}
+        </div>
       </div>
     </div>
   );
