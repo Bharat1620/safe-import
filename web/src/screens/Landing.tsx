@@ -101,21 +101,13 @@ export function Landing({ onUploaded }: LandingProps) {
           <button
             type="button"
             disabled={busy}
-            onClick={() => void start(() => uploadSample())}
+            onClick={() => void start(() => uploadSample(25000))}
             className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
           >
             Try a sample import
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void start(() => uploadSample(25000))}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
-          >
-            Or 25,000 rows
-          </button>
           <span className="text-sm text-slate-500">
-            No file needed. The large one runs as a background job.
+            No file needed — 25,000 messy rows, processed as a background job.
           </span>
         </div>
       </div>
