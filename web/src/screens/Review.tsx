@@ -36,13 +36,24 @@ export function Review({
   const [revision, setRevision] = useState(0);
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [errorCount, setErrorCount] = useState<number | null>(null);
+  const [edited, setEdited] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     void getImport(importId).then(setInfo).catch(() => {});
   }, [importId]);
 
   const dataSource = useMemo(
-    () => new ApiSource(importId, errorsOnly, setErrorCount),
+    () =>
+      new ApiSource(importId, {
+        errorsOnly,
+        onErrorCount: setErrorCount,
+        onSaved: () => {
+          setEdited(true);
+          setSaveError(null);
+        },
+        onSaveError: setSaveError,
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [importId, revision, errorsOnly],
   );
@@ -50,6 +61,16 @@ export function Review({
   const remap = useCallback(
     async (header: string, field: string) => {
       if (!info) return;
+      // Remapping re-stages the file from the original CSV, so anything edited
+      // since upload is rebuilt from scratch and lost.
+      if (
+        edited &&
+        !window.confirm(
+          "Changing the mapping re-reads the file, which discards the cell edits you have made. Continue?",
+        )
+      ) {
+        return;
+      }
       const next = { ...(info.mapping ?? {}) };
       if (field === "") delete next[header];
       else {
@@ -72,6 +93,15 @@ export function Review({
   );
 
   async function commit() {
+    const total = info?.total_rows ?? 0;
+    const bad = errorCount ?? 0;
+    const message = partial
+      ? `Import ${(total - bad).toLocaleString()} rows and reject ${bad.toLocaleString()}? This cannot be undone.`
+      : bad > 0
+        ? `${bad.toLocaleString()} rows are invalid, so nothing will be imported. Continue?`
+        : `Import all ${total.toLocaleString()} rows? This cannot be undone.`;
+    if (!window.confirm(message)) return;
+
     setBusy(true);
     setError(null);
     try {
@@ -86,6 +116,8 @@ export function Review({
   if (result) {
     return <Committed result={result} onDone={onDone} />;
   }
+
+  const committed = info?.status === "committed";
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
@@ -106,11 +138,19 @@ export function Review({
         </span>
       </header>
 
-      {info?.headers && <MappingBar info={info} busy={busy} onChange={remap} />}
+      {committed && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          This import has been committed. Its rows are read-only.
+        </p>
+      )}
 
-      {error && (
-        <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {error}
+      {info?.headers && (
+        <MappingBar info={info} busy={busy || committed} onChange={remap} />
+      )}
+
+      {(error || saveError) && (
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {error ?? `${saveError} — your change was not saved.`}
         </p>
       )}
 
@@ -143,35 +183,41 @@ export function Review({
       </div>
 
       <div className="min-h-0 flex-1">
-        <Sheet dataSource={dataSource} columns={COLUMNS} />
+        <Sheet
+          dataSource={dataSource}
+          columns={COLUMNS}
+          readOnly={committed}
+        />
       </div>
 
-      <div className="flex items-center gap-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-        <label className="flex items-center gap-2 text-slate-700">
-          <input
-            type="radio"
-            checked={partial}
-            onChange={() => setPartial(true)}
-          />
-          Import valid rows, list the rest as rejects
-        </label>
-        <label className="flex items-center gap-2 text-slate-700">
-          <input
-            type="radio"
-            checked={!partial}
-            onChange={() => setPartial(false)}
-          />
-          Cancel everything unless every row is valid
-        </label>
-        <button
-          type="button"
-          onClick={() => void commit()}
-          disabled={busy}
-          className="ml-auto rounded-md bg-sky-600 px-4 py-1.5 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-        >
-          {busy ? "Committing…" : "Commit"}
-        </button>
-      </div>
+      {!committed && (
+        <div className="flex items-center gap-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <label className="flex items-center gap-2 text-slate-700">
+            <input
+              type="radio"
+              checked={partial}
+              onChange={() => setPartial(true)}
+            />
+            Import valid rows, list the rest as rejects
+          </label>
+          <label className="flex items-center gap-2 text-slate-700">
+            <input
+              type="radio"
+              checked={!partial}
+              onChange={() => setPartial(false)}
+            />
+            Cancel everything unless every row is valid
+          </label>
+          <button
+            type="button"
+            onClick={() => void commit()}
+            disabled={busy}
+            className="ml-auto rounded-md bg-sky-600 px-4 py-1.5 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+          >
+            {busy ? "Committing…" : "Commit"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

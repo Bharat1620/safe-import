@@ -8,9 +8,10 @@ import type { CellDiff, ColumnDef, SheetDataSource } from "./types";
 interface SheetProps {
   dataSource: SheetDataSource;
   columns: ColumnDef[];
+  readOnly?: boolean;
 }
 
-export function Sheet({ dataSource, columns }: SheetProps) {
+export function Sheet({ dataSource, columns, readOnly = false }: SheetProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -125,6 +126,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
 
     if (mod && e.key.toLowerCase() === "z") {
       e.preventDefault();
+      if (readOnly) return;
       await (e.shiftKey ? undo.redo() : undo.undo());
       return;
     }
@@ -169,16 +171,18 @@ export function Sheet({ dataSource, columns }: SheetProps) {
       case "Enter":
       case "F2":
         e.preventDefault();
+        if (readOnly) return;
         return cursor.beginEdit(valueAt(cursor.active.row, cursor.active.col));
       case "Delete":
       case "Backspace":
         e.preventDefault();
+        if (readOnly) return;
         return undo.push(diffsForSelection(() => ""));
     }
 
     // Printable characters start an edit and replace the value, as in any
     // spreadsheet. length === 1 excludes "ArrowDown", "Shift" and friends.
-    if (!mod && e.key.length === 1) {
+    if (!mod && e.key.length === 1 && !readOnly) {
       e.preventDefault();
       cursor.beginEdit(e.key);
     }
@@ -199,7 +203,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
 
   /** Writes a rectangle from the active cell. However many cells, one undo entry. */
   const handlePaste = (e: React.ClipboardEvent) => {
-    if (cursor.isEditing) return;
+    if (cursor.isEditing || readOnly) return;
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
     if (!text) return;
@@ -241,6 +245,10 @@ export function Sheet({ dataSource, columns }: SheetProps) {
 
   const { top, bottom, left, right } = cursor.selection;
   const selectedCount = (bottom - top + 1) * (right - left + 1);
+
+  const activeError = getRow(cursor.active.row)?.errors?.[
+    columns[cursor.active.col]?.key
+  ];
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 text-[13px]">
@@ -357,7 +365,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                         cursor.moveTo({ row: index, col }, e.shiftKey)
                       }
                       onDoubleClick={() =>
-                        cursor.beginEdit(valueAt(index, col))
+                        !readOnly && cursor.beginEdit(valueAt(index, col))
                       }
                       className={[
                         "shrink-0 overflow-hidden border-r border-slate-100 px-2 leading-[25px] whitespace-nowrap",
@@ -402,7 +410,16 @@ export function Sheet({ dataSource, columns }: SheetProps) {
           cell {cursor.active.row + 1},{cursor.active.col + 1}
           {cursor.hasRange && ` · ${selectedCount} selected`}
         </span>
-        <span>undo depth {undo.depth}</span>
+        {!readOnly && <span>undo depth {undo.depth}</span>}
+        {activeError ? (
+          <span className="font-medium text-rose-700">{activeError}</span>
+        ) : (
+          !readOnly && (
+            <span className="ml-auto text-slate-400">
+              shift+arrows to select · ⌘C / ⌘V · ⌘Z to undo
+            </span>
+          )
+        )}
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ export function Processing({
           onClick={onCancel}
           className="ml-auto text-sm text-sky-600 underline underline-offset-2"
         >
-          Cancel
+          Leave it running
         </button>
       </div>
 

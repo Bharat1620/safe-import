@@ -110,6 +110,19 @@ def upload_sample(session: Session = Depends(get_session)):
     still see the whole flow. Its headers are deliberately opaque — the
     heuristic mapper cannot resolve them and the model can.
     """
+    # Reuse the most recent uncommitted sample rather than creating one per
+    # click, which otherwise fills the imports list during a demo.
+    existing = session.scalar(
+        select(Import)
+        .where(Import.filename == "sample.csv", Import.status != "committed")
+        .order_by(Import.created_at.desc())
+        .limit(1)
+    )
+    if existing:
+        return UploadOut(
+            import_id=existing.id, total_rows=existing.total_rows, job_id=None
+        )
+
     # __file__ is app/routers/imports.py, so the app package is two levels up.
     raw = (pathlib.Path(__file__).parents[1] / "sample.csv").read_bytes()
     return _create_import(session, raw, "sample.csv", None)
