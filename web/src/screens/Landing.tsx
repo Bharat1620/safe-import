@@ -37,7 +37,9 @@ export function Landing({ onUploaded }: LandingProps) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-16">
       <header className="flex items-baseline gap-3">
-        <span className="font-semibold text-slate-900">Safe Import</span>
+        <span className="text-lg font-semibold tracking-tight text-slate-900">
+          Safe Import
+        </span>
         <Link
           to="/imports"
           className="ml-auto text-sm text-sky-600 underline underline-offset-2"
@@ -95,17 +97,25 @@ export function Landing({ onUploaded }: LandingProps) {
           }}
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={busy}
-            onClick={() => void start(uploadSample)}
+            onClick={() => void start(() => uploadSample())}
             className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
           >
             Try a sample import
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void start(() => uploadSample(25000))}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+          >
+            Or 25,000 rows
+          </button>
           <span className="text-sm text-slate-500">
-            No file needed — deliberately messy, with unnamed columns.
+            No file needed. The large one runs as a background job.
           </span>
         </div>
       </div>

@@ -103,8 +103,52 @@ def list_imports(limit: int = 50, session: Session = Depends(get_session)):
     ).all()
 
 
+FIRST = ["Ana", "Bharat", "Chen", "Dara", "Elif", "Farid", "Gita", "Hana"]
+LAST = ["Rao", "Silva", "Okafor", "Nguyen", "Muller", "Haddad", "Kim"]
+CO = ["Northwind", "Acme", "Globex", "Initech", "Umbrella", "Soylent"]
+
+
+def _generate_sample(rows: int) -> bytes:
+    """
+    Same messy patterns as the small fixture, at scale: every 29th name blank,
+    every 13th email a duplicate, every 7th phone unformatted. Headers are
+    deliberately opaque so the mapper has to read the values.
+    """
+    out = ["Col1,Col2,Col3,Col4,Lead Score"]
+    for i in range(rows):
+        first, last = FIRST[i % len(FIRST)], LAST[i % len(LAST)]
+        email_i = max(0, i - 13) if i % 13 == 0 else i
+        name = "" if i % 29 == 0 else f"{first} {last}"
+        email = f"{first}.{last}{email_i}@example.com".lower()
+        if i % 17 == 0:
+            email = email.replace("@", "")
+        phone = (
+            str(9000000000 + (i % 999999999))
+            if i % 7 == 0
+            else f"+91 {90000 + (i % 9999)} {10000 + (i % 89999)}"
+        )
+        out.append(f"{name},{email},{phone},{CO[i % len(CO)]},{i % 100}")
+    return "\n".join(out).encode()
+
+
+@router.delete("/{import_id}", status_code=204)
+def delete_import(import_id: int, session: Session = Depends(get_session)):
+    imp = session.get(Import, import_id)
+    if imp is None:
+        raise HTTPException(404, "Import not found")
+    # Staged rows and jobs cascade; committed contacts are deliberately kept.
+    session.delete(imp)
+    session.commit()
+
+
 @router.post("/sample", response_model=UploadOut)
-def upload_sample(session: Session = Depends(get_session)):
+def upload_sample(rows: int = 0, session: Session = Depends(get_session)):
+    if rows > 0:
+        rows = min(rows, 100_000)
+        return _create_import(
+            session, _generate_sample(rows), f"sample-{rows}.csv", None
+        )
+
     """
     Starts an import from a bundled file, so someone with no CSV to hand can
     still see the whole flow. Its headers are deliberately opaque — the

@@ -1,7 +1,7 @@
 import csv
 import io
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import Session
 
 from app.models import Contact, Import, Job, StagedRow
@@ -67,8 +67,10 @@ def stage_rows(
         )
 
     if records:
-        # bulk insert: one INSERT with many VALUES rather than one per row.
-        session.bulk_insert_mappings(StagedRow, records)
+        # execute() with a list uses insertmanyvalues, which sends a handful of
+        # multi-row INSERTs. bulk_insert_mappings issues one statement per row,
+        # which against a remote database is thousands of round trips.
+        session.execute(insert(StagedRow.__table__), records)
     return len(records)
 
 
@@ -132,7 +134,7 @@ def commit_import(
         return 0, rejects
 
     if to_insert:
-        session.bulk_insert_mappings(Contact, to_insert)
+        session.execute(insert(Contact.__table__), to_insert)
 
     return len(to_insert), rejects
 
@@ -146,7 +148,7 @@ def run_job(session: Session, job_id: int) -> None:
     is also why it is safe to call this twice — it skips what is already staged.
     """
     job = session.get(Job, job_id)
-    if job is None or job.status == "done":
+    if job is None or job.status in ("done", "running"):
         return
 
     imp = session.get(Import, job.import_id)

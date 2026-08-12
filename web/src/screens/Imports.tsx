@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listImports, type ImportInfo } from "../api/client";
+import { deleteImport, listImports, type ImportInfo } from "../api/client";
 
 const STATUS_STYLES: Record<string, string> = {
   committed: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -19,6 +19,20 @@ export function Imports({ onOpen }: { onOpen: (importId: number) => void }) {
         setError(e instanceof Error ? e.message : "Could not load imports"),
       );
   }, []);
+
+  async function remove(imp: ImportInfo) {
+    if (!window.confirm(`Delete ${imp.filename}? Contacts already committed from it are kept.`)) {
+      return;
+    }
+    const previous = imports;
+    setImports((list) => list?.filter((i) => i.id !== imp.id) ?? null);
+    try {
+      await deleteImport(imp.id);
+    } catch (e) {
+      setImports(previous);
+      setError(e instanceof Error ? e.message : "Could not delete that import");
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-8">
@@ -55,11 +69,11 @@ export function Imports({ onOpen }: { onOpen: (importId: number) => void }) {
       {imports && imports.length > 0 && (
         <ul className="divide-y divide-slate-100 rounded border border-slate-200">
           {imports.map((imp) => (
-            <li key={imp.id}>
+            <li key={imp.id} className="group flex items-center hover:bg-slate-50">
               <button
                 type="button"
                 onClick={() => onOpen(imp.id)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-slate-50"
+                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm"
               >
                 <span className="min-w-0 flex-1 truncate font-medium text-slate-800">
                   {imp.filename}
@@ -83,6 +97,14 @@ export function Imports({ onOpen }: { onOpen: (importId: number) => void }) {
                     minute: "2-digit",
                   })}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void remove(imp)}
+                className="px-4 py-3 text-sm text-slate-400 opacity-0 group-hover:opacity-100 hover:text-rose-700"
+                aria-label={`Delete ${imp.filename}`}
+              >
+                Delete
               </button>
             </li>
           ))}

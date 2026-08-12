@@ -57,8 +57,13 @@ export function uploadCsv(file: File): Promise<UploadResult> {
   return request<UploadResult>("/imports", { method: "POST", body });
 }
 
-export const uploadSample = () =>
-  request<UploadResult>("/imports/sample", { method: "POST" });
+export const uploadSample = (rows = 0) =>
+  request<UploadResult>(`/imports/sample?rows=${rows}`, { method: "POST" });
+
+export const deleteImport = (id: number) =>
+  fetch(`${BASE}/imports/${id}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok) throw new Error("Could not delete that import");
+  });
 
 export const getImport = (id: number) => request<ImportInfo>(`/imports/${id}`);
 
