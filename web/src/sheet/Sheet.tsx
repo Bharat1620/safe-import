@@ -243,8 +243,8 @@ export function Sheet({ dataSource, columns }: SheetProps) {
   const selectedCount = (bottom - top + 1) * (right - left + 1);
 
   return (
-    <div className="flex h-full flex-col border border-slate-200 text-[13px]">
-      <div className="flex shrink-0 border-b border-slate-200 bg-slate-50 font-medium">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 text-[13px]">
+      <div className="z-10 flex shrink-0 border-b border-slate-200 bg-slate-50 font-medium text-slate-600 shadow-sm">
         <div
           className="shrink-0 border-r border-slate-200 px-2 py-1 text-right text-slate-400"
           style={{ width: GUTTER_WIDTH }}
@@ -326,7 +326,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
                 role="row"
                 // Absolute, or assistive tech reads every row as "1 of 40".
                 aria-rowindex={index + 1}
-                className="flex border-b border-slate-100"
+                className="group flex border-b border-slate-100 hover:bg-slate-50/70"
                 style={{ height: ROW_HEIGHT }}
               >
                 <div
@@ -392,7 +392,7 @@ export function Sheet({ dataSource, columns }: SheetProps) {
         </div>
       </div>
 
-      <div className="flex shrink-0 gap-4 border-t border-slate-200 bg-slate-50 px-2 py-1 text-slate-500 tabular-nums">
+      <div className="flex shrink-0 gap-4 border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 tabular-nums">
         <span>
           {totalCount === null
             ? "loading…"

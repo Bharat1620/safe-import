@@ -24,7 +24,7 @@ export function Review({
   onDone,
 }: {
   importId: number;
-  onDone: () => void;
+  onDone: (to: "upload" | "imports") => void;
 }) {
   const [info, setInfo] = useState<ImportInfo | null>(null);
   const [partial, setPartial] = useState(true);
@@ -92,7 +92,7 @@ export function Review({
       <header className="flex items-baseline gap-3">
         <button
           type="button"
-          onClick={onDone}
+          onClick={() => onDone("imports")}
           className="text-sm text-sky-600 underline underline-offset-2"
         >
           Imports
@@ -253,7 +253,7 @@ function Committed({
   onDone,
 }: {
   result: CommitResult;
-  onDone: () => void;
+  onDone: (to: "upload" | "imports") => void;
 }) {
   function downloadRejects() {
     const keys = Object.keys(result.rejects[0] ?? {});
@@ -271,46 +271,69 @@ function Committed({
     URL.revokeObjectURL(url);
   }
 
+  const committed = result.committed > 0;
+
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 py-24">
-      <h2 className="text-lg font-semibold text-slate-800">
-        {result.committed > 0
-          ? `Imported ${result.committed.toLocaleString()} contacts`
-          : "Nothing was imported"}
-      </h2>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-20">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold text-slate-900">
+          {committed
+            ? `Imported ${result.committed.toLocaleString()} contact${result.committed === 1 ? "" : "s"}`
+            : "Nothing was imported"}
+        </h2>
+        <p className="text-slate-600">
+          {result.rejected === 0
+            ? "Every row was valid."
+            : committed
+              ? `${result.rejected.toLocaleString()} rows were rejected and left out.`
+              : `All ${result.rejected.toLocaleString()} rows were rejected, so the import was rolled back.`}
+        </p>
+      </div>
 
       {result.rejected > 0 && (
         <>
-          <p className="text-sm text-slate-600">
-            {result.rejected.toLocaleString()} rows were rejected.
-          </p>
-          <ul className="max-h-64 overflow-auto rounded border border-slate-200 text-sm">
+          <ul className="max-h-72 divide-y divide-slate-100 overflow-auto rounded-lg border border-slate-200 text-sm">
             {result.rejects.slice(0, 50).map((r, i) => (
-              <li key={i} className="border-b border-slate-100 px-3 py-1">
-                <span className="text-slate-400 tabular-nums">
+              <li key={i} className="flex gap-3 px-3 py-1.5">
+                <span className="w-16 shrink-0 text-slate-400 tabular-nums">
                   row {String(r.row)}
-                </span>{" "}
+                </span>
                 <span className="text-rose-700">{String(r.reason)}</span>
               </li>
             ))}
           </ul>
+          {result.rejects.length > 50 && (
+            <p className="-mt-3 text-xs text-slate-400">
+              Showing the first 50. The download has all{" "}
+              {result.rejected.toLocaleString()}.
+            </p>
+          )}
           <button
             type="button"
             onClick={downloadRejects}
-            className="self-start rounded border border-slate-300 px-3 py-1.5 text-sm"
+            className="self-start rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
           >
             Download rejects.csv
           </button>
         </>
       )}
 
-      <button
-        type="button"
-        onClick={onDone}
-        className="self-start text-sm text-sky-600 underline underline-offset-2"
-      >
-        Import another file
-      </button>
+      <div className="flex gap-4 border-t border-slate-200 pt-5 text-sm">
+        <button
+          type="button"
+          onClick={() => onDone("upload")}
+          className="rounded-md bg-sky-600 px-4 py-1.5 font-medium text-white hover:bg-sky-700"
+        >
+          Import another file
+        </button>
+        <button
+          type="button"
+          onClick={() => onDone("imports")}
+          className="text-sky-600 underline underline-offset-2"
+        >
+          View all imports
+        </button>
+      </div>
     </div>
   );
 }

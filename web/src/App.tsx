@@ -59,7 +59,9 @@ export default function App() {
     return (
       <Review
         importId={stage.importId}
-        onDone={() => setStage({ name: "imports" })}
+        onDone={(to) =>
+          setStage(to === "upload" ? { name: "upload" } : { name: "imports" })
+        }
       />
     );
   }

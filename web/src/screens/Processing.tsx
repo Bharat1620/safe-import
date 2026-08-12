@@ -57,27 +57,35 @@ export function Processing({
       : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-3 py-24">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 py-24">
       <div className="flex items-baseline gap-3">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Processing your file
+        </h2>
         <button
           type="button"
           onClick={onCancel}
-          className="text-sm text-sky-600 underline underline-offset-2"
+          className="ml-auto text-sm text-sky-600 underline underline-offset-2"
         >
-          ← back
+          Cancel
         </button>
-        <h2 className="font-medium text-slate-800">Processing your file</h2>
       </div>
 
-      <div className="h-2 overflow-hidden rounded bg-slate-100">
+      <p className="text-slate-600">
+        This runs in the background, so closing the tab will not stop it.
+      </p>
+
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-2 rounded bg-sky-500 transition-[width] duration-200"
+          className="h-2 rounded-full bg-sky-500 transition-[width] duration-200"
           style={{ width: `${pct}%` }}
         />
       </div>
 
       {job?.status === "failed" ? (
-        <p className="text-sm text-rose-700">{job.error ?? "Processing failed"}</p>
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {job.error ?? "Processing failed"}
+        </p>
       ) : (
         <p className="text-sm text-slate-500 tabular-nums">
           {job === null || job.status === "pending"
